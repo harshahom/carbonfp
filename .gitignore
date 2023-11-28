@@ -1,8 +1,25 @@
+# Python
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
+*.pyc
+
+
+
+# Django
+*.log
 db.sqlite3
 media/
-static/
-venv/
+
+# IDE
+.vscode/
+*.pyc
+
+# Compiled files
+*.pyc
+*.pyo
+*.pyd
+
+# Local configuration
+.env
