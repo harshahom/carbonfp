@@ -31,10 +31,10 @@ To run Carbon footprint calculator locally, follow these steps:
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/ecotracker.git
+git clone https://github.com/harshahom/carbonfp.git
 
 # Change into the project directory
-cd ecotracker
+cd carbonemission
 
 # Install dependencies
 pip install -r requirements.txt
