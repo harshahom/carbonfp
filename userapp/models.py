@@ -61,6 +61,8 @@ class Profile(models.Model):
     def get_total_emissions(self):
         user_fuel_used = Fuel_used.objects.filter(owner=self.owner)
         total_emissions = sum(fuel_entry.calculate_total_carbon_emissions() for fuel_entry in user_fuel_used)
+        user_food_choices = DailyFoodChoice.objects.filter(owner=self.owner)
+        total_emissions += sum(food_choice.total_food_emission for food_choice in user_food_choices)
         self.total_carbon_emissions = total_emissions
         self.save()
         return total_emissions

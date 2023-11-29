@@ -14,6 +14,8 @@ from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
+from adminapp.models import EmissionReductionTip
+from adminapp.serializers import EmissionReductionTipSerializer
 from .models import Profile,Fuel_used,DailyFoodChoice, DailyStreak
 from .serializers import ProfileSerializer, Fuel_usedSerializer,DailyFoodChoiceSerializer, DailyStreakSerializer
 from django.contrib.auth.models import User
@@ -205,6 +207,15 @@ class EmissionRecordView(APIView):
         )
 
         current_month_emissions = sum(entry.calculate_total_carbon_emissions() for entry in current_month_entries)
+
+        current_month_food_choices = DailyFoodChoice.objects.filter(
+            owner=current_user,
+            entry_date__range=[current_month_start, current_month_start.replace(month=current_month_start.month + 1) - timedelta(microseconds=1)]
+        )
+        current_month_food_emissions = sum(food_choice.total_food_emission for food_choice in current_month_food_choices)
+
+        current_month_emissions += current_month_food_emissions
+
         past_months_data = []
         for i in range(1, 6):
             start_date = current_month_start - timedelta(days=current_month_start.day)
@@ -215,6 +226,14 @@ class EmissionRecordView(APIView):
             )
 
             total_emissions = sum(entry.calculate_total_carbon_emissions() for entry in month_entries)
+
+            month_food_choices = DailyFoodChoice.objects.filter(
+                owner=current_user,
+                entry_date__range=[start_date, end_date]
+            )
+            total_food_emissions = sum(food_choice.total_food_emission for food_choice in month_food_choices)
+
+            total_emissions += total_food_emissions
 
             past_months_data.append({
                 'month': start_date.strftime('%B %Y'),
@@ -228,6 +247,7 @@ class EmissionRecordView(APIView):
         }
 
         return JsonResponse(response_data)
+
 
 
 class DailyFoodChoiceListView(generics.ListCreateAPIView): 
@@ -297,3 +317,8 @@ class DailyStreakAPIView(APIView):
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
+class AllEmissionReductionTipsView(generics.ListAPIView):
+    queryset = EmissionReductionTip.objects.all()
+    serializer_class = EmissionReductionTipSerializer
