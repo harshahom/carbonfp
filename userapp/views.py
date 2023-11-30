@@ -17,7 +17,8 @@ from rest_framework.permissions import IsAuthenticated
 from adminapp.models import EmissionReductionTip
 from adminapp.serializers import EmissionReductionTipSerializer
 from .models import Profile,Fuel_used,DailyFoodChoice, DailyStreak
-from .serializers import ProfileSerializer, Fuel_usedSerializer,DailyFoodChoiceSerializer, DailyStreakSerializer
+from .serializers import (ProfileSerializer, Fuel_usedSerializer,DailyFoodChoiceSerializer, 
+                          DailyStreakSerializer,LeaderboardSerializer)
 from django.contrib.auth.models import User
 from django.db import IntegrityError
 
@@ -322,3 +323,11 @@ class DailyStreakAPIView(APIView):
 class AllEmissionReductionTipsView(generics.ListAPIView):
     queryset = EmissionReductionTip.objects.all()
     serializer_class = EmissionReductionTipSerializer
+
+class LeaderboardView(APIView):
+
+    permission_classes = [IsAuthenticated] 
+    def get(self, request): 
+        top_profiles = Profile.objects.order_by('total_carbon_emissions')[:10] 
+        leaderboard_data = LeaderboardSerializer(top_profiles, many=True).data 
+        return Response(leaderboard_data, status=status.HTTP_200_OK) 

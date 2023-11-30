@@ -1,9 +1,9 @@
 from rest_framework import serializers
-from .models import AdminUser, EmissionReductionTip
+from .models import CustomAdminUser, EmissionReductionTip
 
-class AdminUserSerializer(serializers.ModelSerializer):
+class CustomUserSerializer(serializers.ModelSerializer):
     class Meta:
-        model = AdminUser
+        model = CustomAdminUser
         fields = ('id', 'username', 'email', 'password', 'is_active')
         extra_kwargs = {'email': {'required': True, 'write_only': True}, 'password': {'write_only': True}}
 

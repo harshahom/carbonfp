@@ -90,7 +90,7 @@ WSGI_APPLICATION = 'carbonemission.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'CO2',
+        'NAME': 'cfp',
         'USER': 'postgres',
         'PASSWORD': 'Harsh@678',
         'HOST': 'localhost',

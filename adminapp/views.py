@@ -2,103 +2,62 @@
 from django.core.mail import send_mail
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from rest_framework.decorators import api_view, permission_classes
 from django.views.decorators.http import require_POST
-from django.utils.crypto import get_random_string
+from django.contrib.auth import authenticate, login
+from rest_framework.permissions import IsAuthenticated
 from django.conf import settings
 from django.core.cache import cache
 from django.http import Http404
 from rest_framework import generics, permissions
 import json
-from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .models import EmissionReductionTip
+from .models import EmissionReductionTip,CustomAdminUser
 from .serializers import EmissionReductionTipSerializer
+from django.contrib.auth.models import User
 
-AdminUser = get_user_model()
 
-@csrf_exempt
-@require_POST
-def admin_register(request):
-    data = json.loads(request.body.decode('utf-8'))
-
-    if 'email' not in data:
-        return JsonResponse({'error': 'Email address is required'}, status=400)
-
-    email = data['email']
-    otp = get_random_string(length=6, allowed_chars='0123456789')
-
-    cache.set(email, otp, timeout=300)
-    username = email.split('@')[0]
-    admin_user = AdminUser(username=username, email=email)
-
-    subject = 'Admin Registration OTP'
-    message = f'Your OTP for admin registration is: {otp}'
-    from_email = settings.DEFAULT_FROM_EMAIL
-    recipient_list = [email]
-
-    try:
-        admin_user.save()
-        send_mail(subject, message, from_email, recipient_list)
-        return JsonResponse({'message': 'OTP sent successfully'}, status=200)
-    except Exception as e:
-        return JsonResponse({'error': f'Error saving admin user or sending email: {str(e)}'}, status=500)
-
-AdminUser = get_user_model()
 
 @csrf_exempt
 @require_POST
-def admin_verify_otp(request):
+def admin_login(request):
     data = json.loads(request.body.decode('utf-8'))
 
-    if 'email' not in data or 'otp' not in data:
-        return JsonResponse({'error': 'Email and OTP are required'}, status=400)
+    if 'username' not in data or 'password' not in data:
+        return JsonResponse({'error': 'Username and password are required'}, status=400)
 
-    email = data['email']
-    admin_user_entered_otp = data['otp']
-    stored_otp = cache.get(email)
+    username = data['username']
+    password = data['password']
 
-    if stored_otp is None:
-        return JsonResponse({'error': 'OTP expired or not found. Please request a new OTP.'}, status=400)
+    user = authenticate(request, username=username, password=password)
 
-    admin_user = AdminUser.objects.filter(email=email).first()
-
-    if admin_user and admin_user_entered_otp == stored_otp:
-        refresh = RefreshToken.for_user(admin_user)
+    if user is not None:
+        login(request, user)
+        refresh = RefreshToken.for_user(user)
         access_token = str(refresh.access_token)
-        return JsonResponse({'message': 'OTP verified successfully', 'access_token': access_token}, status=200)
+        return JsonResponse({'message': 'Login successful', 'access_token': access_token}, status=200)
     else:
-        return JsonResponse({'error': 'Invalid OTP'}, status=400)
+        return JsonResponse({'error': 'Invalid username or password'}, status=401)
 
-@csrf_exempt
-@require_POST
-def admin_resend_otp(request):
-    data = json.loads(request.body.decode('utf-8'))
+@api_view(['GET', 'PUT'])
+@permission_classes([IsAuthenticated])
+def admin_profile(request):
+    if request.method == 'GET':
+        admin_data = {
+            'username': request.user.username,
+            'email': request.user.email,
+        }
+        return Response(admin_data)
+    elif request.method == 'PUT':
+        request.user.username = request.data.get('username', request.user.username)
+        request.user.email = request.data.get('email', request.user.email)
+        request.user.save()
+        return Response({'message': 'Admin profile updated successfully'})
 
-    if 'email' not in data:
-        return JsonResponse({'error': 'Email address is required'}, status=400)
 
-    email = data['email']
-    admin_user = AdminUser.objects.filter(email=email).first()
-
-    if admin_user is None:
-        return JsonResponse({'error': 'Admin user not found with the provided email'}, status=404)
-
-    new_otp = get_random_string(length=6, allowed_chars='0123456789')
-    cache.set(email, new_otp, timeout=300)
-    subject = 'Admin Registration OTP'
-    message = f'Your new OTP for admin registration is: {new_otp}'
-    from_email = settings.DEFAULT_FROM_EMAIL
-    recipient_list = [email]
-
-    try:
-        send_mail(subject, message, from_email, recipient_list)
-        return JsonResponse({'message': 'New OTP sent successfully'}, status=200)
-    except Exception as e:
-        return JsonResponse({'error': f'Error sending email: {str(e)}'}, status=500)
-    
 class EmissionReductionTipListView(generics.ListCreateAPIView):
     queryset = EmissionReductionTip.objects.all()
     serializer_class = EmissionReductionTipSerializer

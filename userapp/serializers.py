@@ -61,3 +61,7 @@ class DailyStreakSerializer(serializers.ModelSerializer):
     class Meta:
         model = DailyStreak
         fields = ['current_streak']
+
+class LeaderboardSerializer(serializers.Serializer): 
+    username = serializers.CharField(source='owner.username', read_only=True) 
+    total_emissions = serializers.FloatField(source='owner.profile_data.total_carbon_emissions', read_only=True) 

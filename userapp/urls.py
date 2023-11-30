@@ -3,7 +3,8 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.urls import path
 from .views import (register, verify_otp,resend_otp,ProfileListView,ProfileDetailView,FuelUsedListView,FuelUsedDetailView
-,EmissionRecordView,DailyFoodChoiceListView,DailyFoodChoiceDetailView, DailyStreakAPIView,AllEmissionReductionTipsView)
+,EmissionRecordView,DailyFoodChoiceListView,DailyFoodChoiceDetailView, DailyStreakAPIView,
+AllEmissionReductionTipsView,LeaderboardView)
 
 urlpatterns = [
     path('register/', register, name='register_user'),
@@ -18,6 +19,7 @@ urlpatterns = [
     path('daily-food-choices/detail/', DailyFoodChoiceDetailView.as_view(), name='daily-food-choices-detail'),
     path('daily-streak/', DailyStreakAPIView.as_view(), name='get_daily_streak'), 
     path('all-emission-tips/', AllEmissionReductionTipsView.as_view(), name='all-emission-tips'),
+    path('leaderboard/', LeaderboardView.as_view(), name='leaderboard')
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
